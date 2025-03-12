@@ -34,14 +34,26 @@ fi
 selected_name=$(basename "$selected" | tr . _)
 tmux_running=$(pgrep tmux)
 
+if [ -d "$selected/.venv" ]; then
+    source "$selected/.venv/bin/activate"
+fi
+
 if [[ -z $TMUX ]] && [[ -z $tmux_running ]]; then
-    tmux new-session -s $selected_name -c $selected
+    if [ -n "$VIRTUAL_ENV" ]; then
+        tmux new-session -s $selected_name -c $selected -e VIRTUAL_ENV="$VIRTUAL_ENV" -e VIRTUAL_ENV_PROMPT="$VIRTUAL_ENV_PROMPT"
+    else
+        tmux new-session -s $selected_name -c $selected
+    fi
     hydrate $selected_name $selected
     exit 0
 fi
 
 if ! has_session $selected_name; then
-    tmux new-session -ds $selected_name -c $selected
+    if [ -n "$VIRTUAL_ENV" ]; then
+        tmux new-session -s $selected_name -c $selected -e VIRTUAL_ENV="$VIRTUAL_ENV" -e VIRTUAL_ENV_PROMPT="$VIRTUAL_ENV_PROMPT"
+    else
+        tmux new-session -s $selected_name -c $selected
+    fi
     hydrate $selected_name $selected
 fi
 
