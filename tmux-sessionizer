@@ -34,8 +34,15 @@ fi
 selected_name=$(basename "$selected" | tr . _)
 tmux_running=$(pgrep tmux)
 
-if [ -d "$selected/.venv" ]; then
-    source "$selected/.venv/bin/activate"
+if [[ -e "$selected/pyproject.toml" ]] && [[ -z "$VIRTUAL_ENV" ]]; then
+    if [[ -d "$selected/.venv" ]]; then
+        source "$selected/.venv/bin/activate"
+    elif [[ -d "$WORKON_HOME/$selected_name" ]]; then
+        source "$WORKON_HOME/$selected_name/bin/activate"
+    else
+        python -m venv "$WORKON_HOME/$selected_name"
+        source "$WORKON_HOME/$selected_name/bin/activate"
+    fi
 fi
 
 if [[ -z $TMUX ]] && [[ -z $tmux_running ]]; then
