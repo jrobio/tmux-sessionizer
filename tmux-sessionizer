@@ -24,7 +24,7 @@ if [[ $# -eq 1 ]]; then
 else
     # If someone wants to make this extensible, i'll accept
     # PR
-    selected=$(find  ~ ~/projects ~/projects/repos ~/projects/work ~/.config ~/.local/bin ~/.local/share -mindepth 1 -maxdepth 1 -type d | fzf)
+    selected=$(find  ~ ~/projects ~/projects/personal ~/projects/work ~/.config ~/.local/bin ~/.local/share -mindepth 1 -maxdepth 1 -type d | fzf)
 fi
 
 if [[ -z $selected ]]; then
@@ -40,21 +40,16 @@ if [[ -e "$selected/pyproject.toml" ]] && [[ -z $VIRTUAL_ENV ]]; then
     if [[ -d "$selected/.venv" ]]; then
         selected_venv=".venv"
         source "$selected/$selected_venv/bin/activate"
-    elif [[ -e "$selected/.pdm-python"]]; then
-        selected_venv=$(sed -E 's|.*/([^/]+)/bin/python|\1|' $selected/.pdm-python)
+    elif [[ -e "$selected/.pdm-python" ]]; then
+        selected_venv=$(sed -E 's|.*/virtualenvs/([^/]+)/bin/python|\1|' "$selected/.pdm-python")
         source "$WORKON_HOME/$selected_venv/bin/activate"
     elif [[ -d "$WORKON_HOME/$selected_name" ]]; then
         selected_venv=$selected_name
-        source "$WORKON_HOME/$selected_venv/bin/activate"
+        workon $selected_venv
     else
         selected_venv=$selected_name
-        python -m venv "$WORKON_HOME/$selected_name"
-        source "$WORKON_HOME/$selected_venv/bin/activate"
-    fi
-
-    if ! python -c "import ipykernel" &>/dev/null; then
-        pip install ipykernel
-        python -m ipykernel install --user --name $selected_venv
+        mkvirtualenv $selected_name
+        workon $selected_venv
     fi
 fi
 
