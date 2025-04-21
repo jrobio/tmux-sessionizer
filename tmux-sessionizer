@@ -24,7 +24,7 @@ if [[ $# -eq 1 ]]; then
 else
     # If someone wants to make this extensible, i'll accept
     # PR
-    selected=$(find  ~ ~/projects ~/projects/repos ~/.config ~/.local/bin ~/.local/share -mindepth 1 -maxdepth 1 -type d | fzf)
+    selected=$(find  ~ ~/projects ~/projects/personal ~/projects/work ~/.config ~/.local/bin ~/.local/share -mindepth 1 -maxdepth 1 -type d | fzf)
 fi
 
 if [[ -z $selected ]]; then
@@ -34,14 +34,22 @@ fi
 selected_name=$(basename "$selected" | tr . _)
 tmux_running=$(pgrep tmux)
 
-if [[ -e "$selected/pyproject.toml" ]] && [[ -z "$VIRTUAL_ENV" ]]; then
+if [[ -e "$selected/pyproject.toml" ]] && [[ -z $VIRTUAL_ENV ]]; then
+    selected_venv=$VIRTUAL_ENV
+    
     if [[ -d "$selected/.venv" ]]; then
-        source "$selected/.venv/bin/activate"
+        selected_venv=".venv"
+        source "$selected/$selected_venv/bin/activate"
+    elif [[ -e "$selected/.pdm-python" ]]; then
+        selected_venv=$(sed -E 's|.*/virtualenvs/([^/]+)/bin/python|\1|' "$selected/.pdm-python")
+        source "$WORKON_HOME/$selected_venv/bin/activate"
     elif [[ -d "$WORKON_HOME/$selected_name" ]]; then
-        source "$WORKON_HOME/$selected_name/bin/activate"
+        selected_venv=$selected_name
+        workon $selected_venv
     else
-        python -m venv "$WORKON_HOME/$selected_name"
-        source "$WORKON_HOME/$selected_name/bin/activate"
+        selected_venv=$selected_name
+        mkvirtualenv $selected_name
+        workon $selected_venv
     fi
 fi
 
